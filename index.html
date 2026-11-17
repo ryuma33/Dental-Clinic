@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Pearl Dental Care</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- iOS look: Apple's SF Pro on iPhone/Mac; Inter (closest free match) everywhere else -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Leaflet: free map library (no API key). Map tiles come from OpenStreetMap. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  /* iOS dark-mode system colours */
+  --bg:#000; --g1:#1c1c1e; --g2:#2c2c2e; --g3:#3a3a3c; --sep:rgba(84,84,88,.65); --fill:rgba(118,118,128,.24);
+  --label:#fff; --l2:rgba(235,235,245,.6); --l3:rgba(235,235,245,.3);
+  --tint:#0a84ff; --blue:#0a84ff; --green:#30d158; --orange:#ff9f0a; --red:#ff453a; --purple:#bf5af2; --gray:#8e8e93; --teal:#40c8e0; --yellow:#ffd60a; --pink:#ff375f;
+  --brand1:#3fd0d4; --brand2:#0a7ea4;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",Inter,system-ui,sans-serif;
+  --top:54px; --bot:34px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#111;color:var(--label);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{display:flex;align-items:center;justify-content:center;background:radial-gradient(900px 600px at 50% 10%,#23303a,#0b0b0d 70%)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:disabled{cursor:default}
+input,textarea{font:inherit;color:inherit}
+i[data-ic]{display:inline-grid;place-items:center;font-style:normal}
+i[data-ic] svg{width:1em;height:1em}
+
+/* ---------- iPhone frame (desktop) ---------- */
+.phone{position:relative;width:393px;height:852px;max-height:100dvh;overflow:hidden;background:var(--bg);border-radius:55px;
+  box-shadow:0 0 0 11px #1a1a1c,0 0 0 13px #4a4a50,0 0 0 14px #1a1a1c,0 50px 120px #000}
+.statusbar{position:absolute;top:0;left:0;right:0;height:54px;z-index:60;pointer-events:none;display:flex;align-items:center;justify-content:space-between;padding:4px 34px 0 46px;font-weight:600;font-size:16px;letter-spacing:-.2px}
+.statusbar .ind{display:flex;gap:6px;align-items:center}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:61;pointer-events:none}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:136px;height:5px;border-radius:3px;background:#fff;z-index:61;pointer-events:none;opacity:.9}
+@media (max-width:500px){
+  :root{--top:max(env(safe-area-inset-top),20px); --bot:env(safe-area-inset-bottom)}
+  body{background:var(--bg)}
+  .phone{width:100vw;height:100dvh;max-height:none;border-radius:0;box-shadow:none}
+  .statusbar,.island,.homebar{display:none}
+}
+
+/* ---------- screens + iOS transitions ---------- */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg);overflow:hidden}
+.screen.on{display:flex}
+.screen.push{animation:pushIn .45s cubic-bezier(.32,.72,0,1)}
+.screen.pop{animation:popIn .4s cubic-bezier(.32,.72,0,1)}
+.screen.up{animation:upIn .5s cubic-bezier(.32,.72,0,1)}
+.screen.fade{animation:fadeIn .25s ease}
+@keyframes pushIn{from{transform:translateX(100%);box-shadow:-20px 0 40px #000}to{transform:none}}
+@keyframes popIn{from{transform:translateX(-28%);opacity:.5}to{transform:none;opacity:1}}
+@keyframes upIn{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.scroll{flex:1;overflow-y:auto;padding-bottom:calc(var(--bot) + 20px);scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.screen.tabbed .scroll{padding-bottom:calc(var(--bot) + 96px)}
+
+/* nav bar */
+.nav{flex:none;padding-top:var(--top);background:rgba(0,0,0,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);position:relative;z-index:5}
+.nav .row{height:44px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 8px}
+.nav .t{font-size:17px;font-weight:600;letter-spacing:-.4px;text-align:center;white-space:nowrap}
+.back{display:flex;align-items:center;gap:2px;color:var(--tint);font-size:17px;letter-spacing:-.4px;justify-self:start;padding:6px 4px}
+.back i{font-size:24px;margin-right:-2px}
+.nbtn{justify-self:end;color:var(--tint);font-size:17px;font-weight:600;letter-spacing:-.4px;padding:6px 8px;display:flex;align-items:center}
+.large{font-size:34px;font-weight:700;letter-spacing:-.9px;margin:2px 20px 14px;line-height:1.15}
+.lead{color:var(--l2);font-size:15px;line-height:1.45;margin:-6px 20px 22px;letter-spacing:-.2px}
+.steps{font-size:13px;color:var(--l2);margin:0 20px 2px;font-weight:600;letter-spacing:-.1px;text-transform:uppercase}
+
+/* grouped lists */
+.gh{font-size:13px;color:var(--l2);text-transform:uppercase;margin:0 36px 7px;display:flex;justify-content:space-between}
+.group{background:var(--g1);border-radius:12px;margin:0 16px 30px;overflow:hidden}
+.gf{font-size:13px;color:var(--l2);margin:-22px 36px 28px;line-height:1.4}
+.cell{position:relative;display:flex;align-items:center;gap:14px;min-height:46px;padding:9px 16px;width:100%;text-align:left;font-size:17px;letter-spacing:-.4px}
+.cell + .cell::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep)}
+.cell.ic + .cell.ic::before{left:60px}
+.cell.doc + .cell.doc::before{left:82px}
+button.cell:active,.cell.tap:active{background:var(--g3)}
+.cell .v{margin-left:auto;color:var(--l2);text-align:right;flex:none}
+.cell .chev{color:var(--l3);font-size:15px;margin-left:6px;flex:none}
+.cell .grow{flex:1;min-width:0}
+.cell small{display:block;font-size:13px;color:var(--l2);margin-top:2px;letter-spacing:-.1px}
+.cell.inp .k{width:96px;flex:none}
+.cell.inp input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:17px;letter-spacing:-.4px;padding:3px 0}
+.cell.inp input::placeholder,textarea.note::placeholder{color:var(--l3)}
+.cell.tint{color:var(--tint);justify-content:center} .cell.red{color:var(--red);justify-content:center}
+.cell.total{font-weight:700;font-size:20px}
+.sq{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;color:#fff;font-size:18px;flex:none}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+textarea.note{width:100%;height:84px;border:0;background:none;outline:none;resize:none;font-size:17px;line-height:1.35;letter-spacing:-.4px;padding:11px 16px;display:block}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;border-radius:14px;background:var(--tint);color:#fff;font-size:17px;font-weight:600;letter-spacing:-.4px;transition:opacity .15s,transform .15s}
+.btn:active{opacity:.75;transform:scale(.98)}
+.btn:disabled{opacity:.35;transform:none}
+.btn.gray{background:var(--g2);color:var(--tint)}
+.btn.redt{background:var(--g2);color:var(--red)}
+.btn.plain{background:none;color:var(--tint);height:44px}
+.btn i{font-size:20px}
+.btnrow{display:flex;gap:10px}
+.foot{flex:none;padding:12px 16px calc(var(--bot) + 12px);display:flex;flex-direction:column;gap:10px;border-top:.5px solid #ffffff14;background:rgba(0,0,0,.85)}
+.foot .sumline{display:flex;justify-content:space-between;font-size:15px;color:var(--l2);padding:0 4px}
+.foot .sumline b{color:var(--label);font-size:17px}
+.pad{padding:0 16px}
+.center{text-align:center}
+
+/* switch */
+.sw{appearance:none;-webkit-appearance:none;width:51px;height:31px;border-radius:16px;background:var(--fill);position:relative;transition:background .25s;cursor:pointer;flex:none;margin:0 0 0 auto}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.32,.72,0,1);box-shadow:0 3px 8px #0004}
+.sw:checked{background:var(--green)} .sw:checked::after{transform:translateX(20px)}
+
+/* segmented control */
+.segc{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--fill);border-radius:9px;padding:2px;width:100%}
+.segc button{height:30px;border-radius:7px;font-size:13px;font-weight:600;letter-spacing:-.1px;transition:background .2s}
+.segc button.on{background:#636366;box-shadow:0 3px 8px #0004}
+.segwrap{margin:0 16px 22px}
+
+/* tab bar */
+.tabbar{position:absolute;left:0;right:0;bottom:0;z-index:40;display:none;grid-template-columns:repeat(3,1fr);padding:7px 0 calc(var(--bot) + 4px);
+  background:rgba(22,22,24,.88);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--sep)}
+.tabbar.show{display:grid}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--gray);letter-spacing:.1px}
+.tabbar button i{font-size:25px}
+.tabbar button.on{color:var(--tint)}
+
+/* banner + HUD + action sheet */
+.banner{position:absolute;left:8px;right:8px;top:calc(var(--top) + 2px);z-index:90;display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:22px;
+  background:rgba(44,44,48,.86);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);box-shadow:0 10px 30px #0008;
+  transform:translateY(calc(-100% - var(--top) - 30px));opacity:0;transition:transform .5s cubic-bezier(.32,.72,0,1),opacity .3s;pointer-events:none}
+.banner.show{transform:none;opacity:1}
+.appi{width:38px;height:38px;border-radius:9px;flex:none;background:linear-gradient(160deg,var(--brand1),var(--brand2));display:grid;place-items:center;font-size:24px;color:#fff}
+.banner b{display:flex;justify-content:space-between;font-size:15px;font-weight:600;letter-spacing:-.3px}
+.banner b span{font-weight:400;color:var(--l2);font-size:13px}
+.banner p{margin:2px 0 0;font-size:15px;letter-spacing:-.3px;line-height:1.3}
+.hud{position:absolute;inset:0;display:none;place-items:center;z-index:95}
+.hud.show{display:grid}
+.hud div{width:96px;height:96px;border-radius:16px;background:rgba(44,44,48,.85);backdrop-filter:blur(20px);display:grid;place-items:center}
+.spinner{width:34px;height:34px;animation:spin 1s steps(8) infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.as-wrap{position:absolute;inset:0;z-index:80;background:rgba(0,0,0,.4);display:none;flex-direction:column;justify-content:flex-end;padding:0 8px calc(var(--bot) + 8px)}
+.as-wrap.show{display:flex;animation:fadeIn .2s}
+.as-wrap.show .as{animation:upIn .4s cubic-bezier(.32,.72,0,1)}
+.as{display:flex;flex-direction:column;gap:8px}
+.as .grp{background:rgba(44,44,48,.92);backdrop-filter:blur(24px);border-radius:14px;overflow:hidden}
+.as .ttl{font-size:13px;color:var(--l2);text-align:center;padding:14px 16px;border-bottom:.5px solid var(--sep);line-height:1.35}
+.as .opt{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:57px;font-size:20px;color:var(--blue);letter-spacing:-.4px;border-bottom:.5px solid var(--sep)}
+.as .opt:last-child{border-bottom:0}
+.as .opt:active{background:var(--g3)}
+.as .opt.danger{color:var(--red)}
+.as .cancel{font-weight:600}
+
+/* ---------- home ---------- */
+.hello{display:flex;align-items:center;justify-content:space-between;margin:calc(var(--top) + 10px) 20px 0}
+.hello small{font-size:15px;color:var(--l2);letter-spacing:-.2px}
+.hero{margin:6px 16px 30px;border-radius:20px;padding:20px;background:linear-gradient(150deg,#13525e,#0b2b3d 70%);position:relative;overflow:hidden;box-shadow:inset 0 1px 0 #ffffff1c}
+.hero::after{content:"";position:absolute;right:-30px;top:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(#3fd0d455,transparent 70%)}
+.hero .tooth{position:absolute;right:16px;top:14px;font-size:64px;color:#ffffff22}
+.hero h2{margin:0 0 4px;font-size:22px;letter-spacing:-.5px}
+.hero p{margin:0 0 16px;color:#d5eef2b3;font-size:15px;line-height:1.4;max-width:240px}
+.hero .btn{background:#fff;color:#0b2b3d;height:46px}
+.dbox{width:46px;height:46px;border-radius:11px;background:var(--g2);display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;line-height:1}
+.dbox b{font-size:18px;font-weight:700}
+.dbox small{font-size:10px!important;margin:3px 0 0!important;text-transform:uppercase;font-weight:700;color:var(--tint)!important}
+.dbox.dim small{color:var(--gray)!important}
+
+/* doctors */
+.dav{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:18px;color:#fff;flex:none;letter-spacing:-.3px;box-shadow:inset 0 -6px 12px #0003}
+.dav.sm{width:38px;height:38px;font-size:14px}
+.dav.lg{width:64px;height:64px;font-size:22px}
+.meta{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--l2);margin-top:4px;flex-wrap:wrap}
+.star{color:var(--yellow);font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;background:var(--fill);font-size:12px;font-weight:600;color:var(--l2)}
+.badge.green{background:#30d15826;color:var(--green)} .badge.red{background:#ff453a26;color:var(--red)} .badge.blue{background:#0a84ff26;color:#64b5ff} .badge.gray{background:var(--fill);color:var(--l2)}
+
+/* date strip + slots */
+.dates{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 4px;margin-bottom:24px;scrollbar-width:none;scroll-snap-type:x proximity}
+.dates::-webkit-scrollbar{display:none}
+.date{flex:none;width:58px;padding:9px 0 8px;border-radius:14px;background:var(--g1);display:flex;flex-direction:column;align-items:center;gap:3px;scroll-snap-align:start;transition:background .15s}
+.date small{font-size:12px;color:var(--l2);font-weight:600;text-transform:uppercase}
+.date b{font-size:21px;font-weight:700;letter-spacing:-.4px}
+.date em{font-style:normal;font-size:10px;color:var(--green);font-weight:600}
+.date.off{opacity:.38} .date.off em{color:var(--l2)}
+.date.on{background:var(--tint)} .date.on small,.date.on em{color:#fff}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 16px 26px}
+.slot{height:42px;border-radius:11px;background:var(--g1);font-size:15px;font-weight:600;letter-spacing:-.2px;border:1px solid #ffffff10}
+.slot.off{color:var(--l3);text-decoration:line-through;background:transparent;border:1px dashed #ffffff1a}
+.slot.on{background:var(--tint);border-color:var(--tint);color:#fff}
+.legend{display:flex;gap:16px;margin:-10px 20px 22px;font-size:12px;color:var(--l2)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:4px;background:var(--g1);border:1px solid #ffffff22}
+.legend i.s{background:var(--tint);border-color:var(--tint)} .legend i.b{background:none;border:1px dashed #ffffff40}
+.empty{margin:0 16px 26px;padding:22px;border-radius:12px;background:var(--g1);text-align:center;color:var(--l2);font-size:15px}
+
+/* ---------- maps (Leaflet, dark) ---------- */
+.leaflet-container{background:#1b1c1f;font-family:var(--font)}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.88) saturate(.7)}
+.leaflet-control-attribution{background:rgba(0,0,0,.55)!important;color:#9a9aa0!important;font-size:9px!important;border-radius:6px 0 0 0}
+.leaflet-control-attribution a{color:#8ec5ff!important}
+.lpin{width:40px;height:48px;position:relative;filter:drop-shadow(0 3px 5px #000a)}
+.lpin svg{position:absolute;inset:0;width:100%;height:100%}
+.lpin i{position:absolute;left:0;right:0;top:7px;text-align:center;font-size:18px;color:#fff;display:block}
+.lpin i svg{width:1em;height:1em;position:static}
+.ldot{width:18px;height:18px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 0 0 10px #0a84ff33,0 2px 6px #0008}
+.mapfail{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--l2);font-size:15px;padding:30px;background:#1b1c1f}
+.rmap{position:relative;flex:1;min-height:0;background:#1b1c1f;overflow:hidden}
+.rmap .lmap{position:absolute;inset:0}
+.roundbtn{position:absolute;z-index:500;top:calc(var(--top) + 8px);width:40px;height:40px;border-radius:50%;background:rgba(44,44,48,.86);backdrop-filter:blur(20px);display:grid;place-items:center;font-size:18px;color:var(--tint);box-shadow:0 4px 14px #0006}
+.card-sheet{flex:none;background:var(--g1);border-radius:14px 14px 0 0;margin-top:-14px;position:relative;z-index:600;padding:6px 16px calc(var(--bot) + 14px);box-shadow:0 -6px 30px #0007}
+.card-sheet.tabpad{padding-bottom:calc(var(--bot) + 84px)}
+.card-sheet h3{margin:4px 0 2px;font-size:24px;font-weight:700;letter-spacing:-.6px}
+.card-sheet .sub{font-size:15px;color:var(--l2);letter-spacing:-.2px;line-height:1.4}
+.grabber{width:36px;height:5px;border-radius:3px;background:var(--g3);margin:0 auto 10px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);margin:14px 0;padding:12px 0;border-top:.5px solid var(--sep);border-bottom:.5px solid var(--sep)}
+.facts div{padding:0 10px;border-left:.5px solid var(--sep);min-width:0}
+.facts div:first-child{border-left:0;padding-left:0}
+.facts small{display:block;font-size:11px;color:var(--l2);text-transform:uppercase;font-weight:600}
+.facts b{display:block;font-size:15px;font-weight:600;margin-top:3px;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.facts a{color:var(--tint);text-decoration:none}
+
+/* picker */
+.pk-top{position:absolute;z-index:700;left:0;right:0;top:0;padding:calc(var(--top) + 6px) 12px 10px;display:flex;gap:10px;align-items:center;background:linear-gradient(#000d,#0000)}
+.pk-top .roundbtn{position:static;flex:none}
+.sfield{flex:1;display:flex;align-items:center;gap:7px;height:40px;border-radius:12px;background:rgba(44,44,48,.92);backdrop-filter:blur(20px);padding:0 10px;color:var(--l2);font-size:17px;box-shadow:0 4px 14px #0006}
+.sfield input{flex:1;min-width:0;background:none;border:0;outline:none;font-size:17px;letter-spacing:-.4px;color:var(--label)}
+.sfield input::placeholder{color:var(--l2)}
+.sugg{position:absolute;z-index:701;left:12px;right:12px;top:calc(var(--top) + 58px);max-height:330px;overflow-y:auto;border-radius:12px;background:rgba(36,36,40,.97);display:none;box-shadow:0 10px 30px #000a}
+.sugg.show{display:block;animation:fadeIn .15s}
+.sugg .cell{font-size:16px;min-height:44px}
+.centerpin{position:absolute;left:50%;top:50%;z-index:650;pointer-events:none;transform:translate(-50%,-100%);transition:transform .15s}
+.centerpin.lift{transform:translate(-50%,calc(-100% - 10px))}
+.centerpin::after{content:"";position:absolute;left:50%;bottom:-4px;width:10px;height:4px;margin-left:-5px;border-radius:50%;background:#0009}
+.pk-addr{display:flex;gap:12px;align-items:center;margin:2px 0 12px}
+.pk-addr b{display:block;font-size:18px;letter-spacing:-.4px;line-height:1.25}
+.pk-addr small{font-size:14px;color:var(--l2)}
+.warn{color:var(--orange)!important}
+
+/* success */
+.okmark{width:88px;height:88px;margin:0 auto;display:grid;place-items:center;border-radius:50%;font-size:46px;color:#fff;background:var(--green);animation:pop .55s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes pop{from{transform:scale(.3);opacity:0}}
+.ticket{margin:0 16px 30px;border-radius:16px;background:var(--g1);overflow:hidden;animation:rise .4s .1s both}
+.ticket .th{display:flex;gap:12px;align-items:center;padding:16px}
+.ticket .tid{display:flex;justify-content:space-between;padding:12px 16px;border-top:1px dashed #ffffff26;font-size:14px;color:var(--l2)}
+.ticket .tid b{color:var(--label);letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+<div class="statusbar"><span id="sbTime">9:41</span><span class="ind">
+  <svg width="18" height="12" viewBox="0 0 18 12" fill="#fff"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+  <svg width="16" height="12" viewBox="0 0 16 12" fill="#fff"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.2A10.2 10.2 0 0 0 8 .5C5.2.5 2.7 1.6.8 3.4L2 4.6a8.5 8.5 0 0 1 6-2.4zm0 3.4c1.4 0 2.6.5 3.6 1.4l1.2-1.2A6.8 6.8 0 0 0 8 3.9 6.8 6.8 0 0 0 3.2 5.8L4.4 7c1-.9 2.2-1.4 3.6-1.4zm0 3.4c-.6 0-1.1.2-1.5.6L8 11.1l1.5-1.5c-.4-.4-.9-.6-1.5-.6z"/></svg>
+  <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="#fff" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2" fill="#fff"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" fill="#fff" opacity=".4"/></svg></span></div>
+<div class="island"></div>
+<div class="homebar"></div>
+
+<!-- 1. HOME (tab) -->
+<section class="screen tabbed" id="home">
+  <div class="scroll">
+    <div class="hello"><small id="greet">Good morning</small><span class="dav sm" id="meAv" style="background:linear-gradient(180deg,#a5a5ab,#6e6e74)">RV</span></div>
+    <div class="large" style="margin-top:2px">Pearl Dental</div>
+    <div class="hero">
+      <i data-ic="tooth" class="tooth"></i>
+      <h2>Book an appointment</h2>
+      <p>Choose a dentist and a time that suits you. Add pick-up &amp; drop if you need a ride.</p>
+      <button class="btn" data-book><i data-ic="calendar"></i>Book Now</button>
+    </div>
+    <div id="nextBox"></div>
+    <div class="gh">Our Dentists</div>
+    <div class="group" id="homeDocs"></div>
+    <div class="gh">Visit Us</div>
+    <div class="group">
+      <button class="cell ic" data-tab="clinic"><span class="sq" style="background:var(--red)"><i data-ic="pin"></i></span><span class="grow">Clinic Location<small>Mullakkal Rd, Alappuzha</small></span><i data-ic="chevR" class="chev"></i></button>
+      <a class="cell ic tap" href="tel:+914772254410" style="color:inherit;text-decoration:none"><span class="sq" style="background:var(--green)"><i data-ic="phone"></i></span><span class="grow">Call Reception<small>+91 477 225 4410</small></span><i data-ic="chevR" class="chev"></i></a>
+    </div>
+  </div>
+</section>
+
+<!-- 2. CHOOSE A DENTIST -->
+<section class="screen" id="doctors">
+  <div class="nav"><div class="row"><button class="back" data-back><i data-ic="chevL"></i>Back</button><span class="t"></span><span></span></div></div>
+  <div class="scroll">
+    <div class="steps">Step 1 of 4</div>
+    <div class="large">Choose a Dentist</div>
+    <div class="group" id="docList"></div>
+    <p class="gf">Consultation fee is ₹500 with every dentist.</p>
+  </div>
+</section>
+
+<!-- 3. DATE & TIME (also used for Reschedule) -->
+<section class="screen" id="slots">
+  <div class="nav"><div class="row"><button class="back" data-back><i data-ic="chevL"></i>Back</button><span class="t" id="slTitle"></span><span></span></div></div>
+  <div class="scroll">
+    <div class="steps" id="slStep">Step 2 of 4</div>
+    <div class="large" id="slLarge">Date &amp; Time</div>
+    <div class="group"><div class="cell doc" id="slDoc"></div></div>
+    <div class="gh" id="slMonth">Date</div>
+    <div class="dates" id="dateStrip"></div>
+    <div id="slotBox"></div>
+  </div>
+  <div class="foot"><button class="btn" id="slNext" disabled>Continue</button></div>
+</section>
+
+<!-- 4. PATIENT DETAILS -->
+<section class="screen" id="patient">
+  <div class="nav"><div class="row"><button class="back" data-back><i data-ic="chevL"></i>Back</button><span class="t"></span><span></span></div></div>
+  <div class="scroll">
+    <div class="steps">Step 3 of 4</div>
+    <div class="large">Patient Details</div>
+    <p class="lead">Who is this appointment for?</p>
+    <div class="group">
+      <label class="cell inp"><span class="k">Name</span><input id="ptName" autocomplete="name" placeholder="Full name"></label>
+      <label class="cell inp"><span class="k">Mobile</span><input id="ptPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit number"></label>
+      <label class="cell inp"><span class="k">Age</span><input id="ptAge" type="number" inputmode="numeric" min="1" max="110" placeholder="Years"></label>
+    </div>
+    <div class="gh">Gender</div>
+    <div class="segwrap"><div class="segc" id="ptGender"><button data-v="Male">Male</button><button data-v="Female">Female</button><button data-v="Other">Other</button></div></div>
+    <div class="gh">Reason for Visit</div>
+    <div class="group"><button class="cell" id="ptReasonBtn"><span class="grow">Reason</span><span class="v" id="ptReason">Choose</span><i data-ic="chevR" class="chev"></i></button></div>
+    <div class="gh">Notes for the Dentist</div>
+    <div class="group"><textarea class="note" id="ptNotes" placeholder="Optional, e.g. sensitive tooth on lower left"></textarea></div>
+  </div>
+  <div class="foot"><button class="btn" id="ptNext">Continue</button></div>
+</section>
+
+<!-- 5. PICK-UP & DROP (optional add-on) -->
+<section class="screen" id="ride">
+  <div class="nav"><div class="row"><button class="back" data-back><i data-ic="chevL"></i>Back</button><span class="t"></span><span></span></div></div>
+  <div class="scroll" id="rideBody"></div>
+  <div class="foot"><div class="sumline" id="rideSum"></div><button class="btn" id="rideNext">Review Booking</button></div>
+</section>
+
+<!-- 6. CHOOSE LOCATION (map picker) -->
+<section class="screen" id="picker">
+  <div class="rmap" id="pkMapWrap"><div class="lmap" id="pkMap"></div>
+    <div class="centerpin" id="pkPin"></div>
+  </div>
+  <div class="pk-top">
+    <button class="roundbtn" data-back aria-label="Back"><i data-ic="chevL"></i></button>
+    <label class="sfield"><i data-ic="search"></i><input id="pkSearch" placeholder="Search or type an address" autocomplete="off" enterkeyhint="search"></label>
+  </div>
+  <div class="sugg" id="pkSugg"></div>
+  <div class="card-sheet">
+    <div class="grabber" style="margin-top:2px"></div>
+    <div class="steps" id="pkKind" style="margin:0 0 6px">Pick-up location</div>
+    <div class="pk-addr"><span class="sq" id="pkIcon" style="background:var(--green);width:36px;height:36px;border-radius:50%"><i data-ic="pin"></i></span>
+      <div class="grow" style="min-width:0"><b id="pkLabel">Move the map to place the pin</b><small id="pkDist"></small></div></div>
+    <div class="btnrow"><button class="btn gray" id="pkGeo" style="flex:1"><i data-ic="nav"></i>Use My Location</button></div>
+    <div style="height:10px"></div>
+    <button class="btn" id="pkOk">Confirm Location</button>
+  </div>
+</section>
+
+<!-- 7. BOOKING SUMMARY -->
+<section class="screen" id="summary">
+  <div class="nav"><div class="row"><button class="back" data-back><i data-ic="chevL"></i>Back</button><span class="t"></span><span></span></div></div>
+  <div class="scroll" id="sumBody"></div>
+  <div class="foot"><button class="btn" id="sumPay">Confirm</button></div>
+</section>
+
+<!-- 8. BOOKING CONFIRMED -->
+<section class="screen" id="done">
+  <div class="nav" style="background:none"><div class="row"><span></span><span class="t"></span><button class="nbtn" data-tab="home">Done</button></div></div>
+  <div class="scroll">
+    <div class="okmark" style="margin-top:14px"><i data-ic="check"></i></div>
+    <div class="large center" style="margin:18px 20px 6px">Booking Confirmed</div>
+    <p class="lead center" id="doneLead" style="margin:0 30px 24px"></p>
+    <div id="doneTicket"></div>
+  </div>
+  <div class="foot"><button class="btn" data-tab="appts"><i data-ic="list"></i>My Appointments</button></div>
+</section>
+
+<!-- 9. MY APPOINTMENTS (tab) -->
+<section class="screen tabbed" id="appts">
+  <div class="scroll" style="padding-top:calc(var(--top) + 10px)">
+    <div class="large" style="margin-top:34px">Appointments</div>
+    <div class="segwrap"><div class="segc" id="apSeg"><button data-v="up" class="on">Upcoming</button><button data-v="past">Past &amp; Cancelled</button></div></div>
+    <div id="apList"></div>
+  </div>
+</section>
+
+<!-- 10. APPOINTMENT DETAILS -->
+<section class="screen" id="appt">
+  <div class="nav"><div class="row"><button class="back" data-back><i data-ic="chevL"></i>Appointments</button><span class="t"></span><span></span></div></div>
+  <div class="scroll" id="adBody"></div>
+  <div class="foot" id="adFoot"><div class="btnrow"><button class="btn gray" id="adResched" style="flex:1">Reschedule</button><button class="btn redt" id="adCancel" style="flex:1">Cancel</button></div></div>
+</section>
+
+<!-- 11. CLINIC LOCATION (tab) -->
+<section class="screen tabbed" id="clinic">
+  <div class="rmap"><div class="lmap" id="clMap"></div>
+    <button class="roundbtn" id="clRecenter" aria-label="Centre on clinic" style="right:14px"><i data-ic="nav"></i></button></div>
+  <div class="card-sheet tabpad">
+    <div class="grabber" style="margin-top:2px"></div>
+    <h3>Pearl Dental Care</h3>
+    <div class="sub">2nd Floor, Mullakkal Plaza, Mullakkal Rd<br>Alappuzha, Kerala 688011</div>
+    <div class="facts">
+      <div><small>Hours</small><b>9:30–7:30</b></div>
+      <div><small>Open</small><b>Mon–Sat</b></div>
+      <div><small>Phone</small><b><a href="tel:+914772254410">Call</a></b></div>
+    </div>
+    <div class="btnrow"><button class="btn gray" id="clOpen" style="flex:1"><i data-ic="map"></i>Open in Maps</button><button class="btn" id="clDir" style="flex:1"><i data-ic="route"></i>Directions</button></div>
+  </div>
+</section>
+
+<!-- tab bar + shared overlays -->
+<nav class="tabbar" id="tabbar">
+  <button data-tab="home"><i data-ic="house"></i>Home</button>
+  <button data-tab="appts"><i data-ic="calendar"></i>Appointments</button>
+  <button data-tab="clinic"><i data-ic="pin"></i>Clinic</button>
+</nav>
+<div class="as-wrap" id="asWrap"><div class="as"><div class="grp" id="asOpts"></div><div class="grp"><button class="opt cancel" id="asCancel">Cancel</button></div></div></div>
+<div class="banner" id="toast"><span class="appi"><i data-ic="tooth"></i></span><div style="flex:1;min-width:0"><b>Pearl Dental<span>now</span></b><p id="toastMsg"></p></div></div>
+<div class="hud" id="busy"><div><svg class="spinner" viewBox="0 0 34 34">
+  <g stroke="#fff" stroke-width="3.2" stroke-linecap="round"><line x1="17" y1="3" x2="17" y2="9"/><line x1="26.9" y1="7.1" x2="22.7" y2="11.3" opacity=".85"/><line x1="31" y1="17" x2="25" y2="17" opacity=".7"/><line x1="26.9" y1="26.9" x2="22.7" y2="22.7" opacity=".6"/>
+  <line x1="17" y1="31" x2="17" y2="25" opacity=".5"/><line x1="7.1" y1="26.9" x2="11.3" y2="22.7" opacity=".4"/><line x1="3" y1="17" x2="9" y2="17" opacity=".3"/><line x1="7.1" y1="7.1" x2="11.3" y2="11.3" opacity=".2"/></g></svg></div></div>
+</div>
+
+<script>
+/* ============ ICONS (SF Symbols-style line icons, inline SVG) ============ */
+const IC = {
+  chevL:'<path d="M15 4.5L7.5 12 15 19.5" stroke-width="2.6"/>', chevR:'<path d="M9 5l7 7-7 7" stroke-width="2.6"/>',
+  search:'<circle cx="10.5" cy="10.5" r="6.5" stroke-width="2.3"/><path d="M15.5 15.5L20 20" stroke-width="2.6"/>',
+  pin:'<path d="M12 21.5s6.5-6.3 6.5-11.5a6.5 6.5 0 0 0-13 0c0 5.2 6.5 11.5 6.5 11.5z" fill="currentColor" stroke="none"/><circle cx="12" cy="10" r="2.4" fill="#000" stroke="none" opacity=".35"/>',
+  car:'<path d="M5.5 11l1.6-4A2 2 0 0 1 9 5.8h6a2 2 0 0 1 1.9 1.2l1.6 4M4 11.5h16v5.5H4z M6 17v2M18 17v2" stroke-width="2"/><circle cx="7.5" cy="14.2" r=".8" fill="currentColor"/><circle cx="16.5" cy="14.2" r=".8" fill="currentColor"/>',
+  clock:'<circle cx="12" cy="12" r="8.5" stroke-width="2"/><path d="M12 7.5V12l3 2" stroke-width="2.2"/>',
+  cash:'<rect x="3" y="6.5" width="18" height="11" rx="2" stroke-width="2"/><circle cx="12" cy="12" r="2.6" stroke-width="2"/>',
+  card:'<rect x="3" y="5.5" width="18" height="13" rx="2.5" stroke-width="2"/><path d="M3 10h18" stroke-width="2.6"/>',
+  check:'<path d="M5.5 12.5l4 4L18.5 7.5" stroke-width="3.2"/>', x:'<path d="M7 7l10 10M17 7L7 17" stroke-width="2.6"/>',
+  nav:'<path d="M20 4L4 11l7 2 2 7z" fill="currentColor" stroke="none"/>',
+  phone:'<path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5.5a2 2 0 0 1 2-2z" fill="currentColor" stroke="none"/>',
+  calendar:'<rect x="3.5" y="5" width="17" height="15.5" rx="3" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke-width="2.2"/>',
+  house:'<path d="M4 11l8-6.5 8 6.5v8.5a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z" fill="currentColor" stroke="none"/>',
+  list:'<path d="M9 6.5h11M9 12h11M9 17.5h11" stroke-width="2.2"/><circle cx="4.8" cy="6.5" r="1.3" fill="currentColor"/><circle cx="4.8" cy="12" r="1.3" fill="currentColor"/><circle cx="4.8" cy="17.5" r="1.3" fill="currentColor"/>',
+  person:'<circle cx="12" cy="8" r="4" fill="currentColor" stroke="none"/><path d="M4.5 20.5c.6-4 3.6-6.3 7.5-6.3s6.9 2.3 7.5 6.3z" fill="currentColor" stroke="none"/>',
+  map:'<path d="M3.5 6.5l5.5-2.5 6 2.5 5.5-2.5v13.5l-5.5 2.5-6-2.5-5.5 2.5z M9 4v13.5M15 6.5V20" stroke-width="2"/>',
+  route:'<circle cx="6" cy="18" r="2.4" stroke-width="2"/><circle cx="18" cy="6" r="2.4" stroke-width="2"/><path d="M8.4 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.6" stroke-width="2"/>',
+  tooth:'<path d="M7.5 3.5c1.8 0 2.8.9 4.5.9s2.7-.9 4.5-.9c2.6 0 4 2.2 4 5 0 2.4-1.2 3.9-1.7 6-.6 2.6-.9 6-2.6 6-1.8 0-1.6-4.6-4.2-4.6s-2.4 4.6-4.2 4.6c-1.7 0-2-3.4-2.6-6-.5-2.1-1.7-3.6-1.7-6 0-2.8 1.4-5 4-5z" fill="currentColor" stroke="none"/>',
+  star:'<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z" fill="currentColor" stroke="none"/>',
+  flag:'<path d="M6 21V4M6 4.5h11.5l-2.5 4 2.5 4H6" stroke-width="2.6"/>',
+  note:'<path d="M6 3.5h8.5l4 4v13H6z" stroke-width="2"/><path d="M9 12h6M9 16h6" stroke-width="2"/>',
+};
+function svgIcon(n){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${IC[n]||''}</svg>`; }
+function paintIcons(root=document){ root.querySelectorAll('i[data-ic]:not([data-done])').forEach(el=>{ el.innerHTML=svgIcon(el.dataset.ic); el.dataset.done=1; }); }
+
+/* ============ SAMPLE DATA ============ */
+// ASSUMPTION: clinic name, address, phone and map position are made up (realistic for Alappuzha, Kerala). Coordinates are approximate.
+const CLINIC = { name:'Pearl Dental Care', lat:9.4968, lng:76.3386, addr:'2nd Floor, Mullakkal Plaza, Mullakkal Rd, Alappuzha, Kerala 688011', phone:'+91 477 225 4410' };
+const FEE = 500;           // consultation fee (from the user)
+const RIDE_BASE = 99;      // pick-up & drop base fee (from the user)
+const RIDE_PER_KM = 15;    // ₹ per km for each leg (from the user)
+const ROAD_FACTOR = 1.3;   // ASSUMPTION: road distance ≈ straight-line distance × 1.3 (no routing API without a key)
+const MAX_KM = 25;         // ASSUMPTION: pick-up & drop only within 25 km of the clinic
+const PICKUP_BEFORE_MIN = 45; // ASSUMPTION: driver picks you up 45 minutes before the appointment
+
+// ASSUMPTION: 5 sample dentists (fake names). All charge the same ₹500 consultation.
+const DOCTORS = [
+  { id:'d1', name:'Dr. Anjali Menon',    spec:'General & Cosmetic Dentist',   deg:'BDS, MDS', exp:12, rating:4.8, reviews:326, color:'#0a84ff' },
+  { id:'d2', name:'Dr. Thomas Kurian',   spec:'Orthodontist · Braces & Aligners', deg:'BDS, MDS (Orthodontics)', exp:15, rating:4.9, reviews:412, color:'#bf5af2' },
+  { id:'d3', name:'Dr. Fathima Rasheed', spec:'Paediatric Dentist (Kids)',    deg:'BDS, MDS (Pedodontics)', exp:8,  rating:4.7, reviews:198, color:'#ff9f0a' },
+  { id:'d4', name:'Dr. Arjun Nair',      spec:'Endodontist · Root Canal',     deg:'BDS, MDS (Endodontics)', exp:10, rating:4.6, reviews:241, color:'#30b05a' },
+  { id:'d5', name:'Dr. Lakshmi Pillai',  spec:'Oral & Maxillofacial Surgeon', deg:'BDS, MDS (OMFS)', exp:18, rating:4.9, reviews:287, color:'#ff375f' },
+];
+// ASSUMPTION: clinic hours Mon–Sat, 9:30 AM–1 PM and 3 PM–7:30 PM, 30-minute slots, closed Sunday.
+const TIMES = ['09:30','10:00','10:30','11:00','11:30','12:00','12:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00'];
+const REASONS = ['Check-up & cleaning','Tooth pain','Braces / aligners','Root canal','Filling','Tooth extraction','Kids’ dental care','Teeth whitening','Other'];
+// ASSUMPTION: no geocoding API (would need a key or send data out), so typed search uses this local list of Alappuzha places (approximate coordinates).
+const PLACES = [
+  ['Mullakkal',9.4975,76.3380],['Alappuzha KSRTC Bus Station',9.4994,76.3394],['Alappuzha Railway Station',9.4900,76.3222],['Alappuzha Beach',9.4930,76.3170],
+  ['Finishing Point, Punnamada',9.5085,76.3462],['Iron Bridge (Irumbu Palam)',9.4995,76.3336],['Kommady',9.5160,76.3300],['Thumpoly',9.5290,76.3170],
+  ['Kalavoor',9.5720,76.3240],['Mararikulam',9.6010,76.3010],['Punnapra',9.4370,76.3330],['Vandanam Medical College',9.4140,76.3430],
+  ['Ambalappuzha',9.3830,76.3610],['Kainakary',9.4720,76.3970],['Pulinkunnu',9.4500,76.4290],['Cherthala',9.6840,76.3360],['Sanathanapuram',9.4790,76.3350],['Pazhaveedu',9.4870,76.3480],
+].map(([name,lat,lng])=>({name,lat,lng}));
+const DEMO_HERE = { lat:9.5108, lng:76.3285 }; // ASSUMPTION: used for "Use my location" when GPS is off/denied or you are far from Alappuzha
+const PAY = { upi:{label:'UPI · rahul@okdemo', sub:'Demo UPI'}, card:{label:'Visa •••• 4242', sub:'Demo card'}, clinic:{label:'Pay at Clinic', sub:'Cash / card at reception'} };
+
+/* ============ STORAGE (localStorage wrapped in try/catch; falls back to memory) ============ */
+const KEY = 'pearldental.v1';
+function dkey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function defaultState(){
+  return {
+    // ASSUMPTION: sample patient profile (there is no login). It pre-fills the Patient Details form.
+    profile:{ name:'Rahul Varghese', phone:'9847012345', age:'29', gender:'Male' },
+    // ASSUMPTION: one finished past visit so "Past" isn't empty on first open
+    bookings:[{ id:'PDC-3817', docId:'d1', date:dkey(addDays(new Date(),-20)), time:'11:00', status:'booked',
+      patient:{ name:'Rahul Varghese', phone:'9847012345', age:'29', gender:'Male', reason:'Check-up & cleaning', notes:'' },
+      ride:null, fee:FEE, total:FEE, pay:'clinic', createdAt:Date.now()-25*864e5 }]
+  };
+}
+let state;
+function load(){ try{ const s=JSON.parse(localStorage.getItem(KEY)); state = s && Array.isArray(s.bookings) ? {...defaultState(), ...s} : defaultState(); }catch(e){ state=defaultState(); } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ /* private mode etc. — keep in memory */ } }
+load();
+
+/* ============ HELPERS ============ */
+function $(s){ return document.querySelector(s); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
+function fromKey(k){ const [y,m,d]=k.split('-').map(Number); return new Date(y,m-1,d); }
+function at(k,t){ const d=fromKey(k); const [h,m]=t.split(':').map(Number); d.setHours(h,m,0,0); return d; }
+function fmtT(t){ const [h,m]=t.split(':').map(Number); return ((h+11)%12+1)+':'+String(m).padStart(2,'0')+(h<12?' AM':' PM'); }
+function fmtD(k,long){ return fromKey(k).toLocaleDateString('en-IN', long?{weekday:'long',day:'numeric',month:'long'}:{weekday:'short',day:'numeric',month:'short'}); }
+function hmDate(d){ return d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}).toUpperCase(); }
+function initials(n){ return String(n||'').replace(/^Dr\.?\s*/,'').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '?'; }
+function DOC(id){ return DOCTORS.find(d=>d.id===id); }
+function hash(str){ let h=2166136261; for(const c of str){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return h>>>0; }
+function km(a,b){ // straight-line (haversine) × road factor, 1 decimal
+  const R=6371, r=x=>x*Math.PI/180, dLat=r(b.lat-a.lat), dLng=r(b.lng-a.lng);
+  const h=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLng/2)**2;
+  return Math.round(2*R*Math.asin(Math.sqrt(h))*ROAD_FACTOR*10)/10;
+}
+function rideQuote(pickup, drop){
+  const pk=km(CLINIC,pickup), dk=km(CLINIC,drop);
+  // ASSUMPTION: one ₹99 base fee per booking + ₹15/km on each leg (pick-up → clinic, clinic → drop)
+  return { pk, dk, pkCost:Math.round(pk*RIDE_PER_KM), dkCost:Math.round(dk*RIDE_PER_KM), total:RIDE_BASE+Math.round(pk*RIDE_PER_KM)+Math.round(dk*RIDE_PER_KM) };
+}
+function nearest(p){ let best=null, bd=1e9; PLACES.forEach(pl=>{ const d=km(p,pl)/ROAD_FACTOR; if(d<bd){ bd=d; best=pl; } }); return {place:best, d:bd}; }
+function dav(doc, cls=''){ return `<span class="dav ${cls}" style="background:linear-gradient(160deg,${doc.color},${doc.color}99)">${initials(doc.name)}</span>`; }
+
+// ASSUMPTION: other patients' bookings are simulated (about 1 in 3 slots booked), stable per doctor + date + time.
+function sampleBooked(docId,k,t){ return hash(docId+'|'+k+'|'+t) % 100 < 34; }
+function slotTaken(docId,k,t,exceptId){
+  if(at(k,t) <= new Date()) return true; // past times can't be booked
+  if(sampleBooked(docId,k,t)) return true;
+  return state.bookings.some(b=>b.id!==exceptId && b.status!=='cancelled' && b.docId===docId && b.date===k && b.time===t);
+}
+function statusOf(b){ if(b.status==='cancelled') return 'cancelled'; return at(b.date,b.time) < new Date() ? 'completed' : 'upcoming'; }
+
+let toastT; function toast(msg){ $('#toastMsg').textContent=msg; const t=$('#toast'); t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2800); }
+function busy(ms){ return new Promise(r=>{ $('#busy').classList.add('show'); setTimeout(()=>{ $('#busy').classList.remove('show'); r(); }, ms); }); }
+// iOS action sheet: options = [{label, value, danger}] → Promise(value|null)
+function actionSheet(title, options){ return new Promise(res=>{
+  $('#asOpts').innerHTML = (title?`<div class="ttl">${title}</div>`:'') + options.map((o,i)=>`<button class="opt${o.danger?' danger':''}" data-i="${i}">${o.label}</button>`).join('');
+  const w=$('#asWrap'); w.classList.add('show');
+  const done=v=>{ w.classList.remove('show'); w.onclick=null; res(v); };
+  w.onclick=e=>{ const b=e.target.closest('[data-i]'); if(b) return done(options[b.dataset.i].value); if(e.target.id==='asCancel'||e.target===w) done(null); };
+}); }
+function sbClock(){ $('#sbTime').textContent = new Date().toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M/i,''); }
+sbClock(); setInterval(sbClock, 15000);
+
+/* ============ NAVIGATION (own stack + browser back button, iOS push/pop animations) ============ */
+const TABS = ['home','appts','clinic'];
+const stack = [];
+const enter = {};
+function render(id, anim){
+  document.querySelectorAll('.screen').forEach(s=>{ const on=s.id===id; s.classList.toggle('on', on); s.classList.remove('push','pop','up','fade'); if(on && anim){ void s.offsetWidth; s.classList.add(anim); } });
+  const tb=$('#tabbar'); tb.classList.toggle('show', TABS.includes(id));
+  tb.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.tab===id));
+  $('#pkSugg').classList.remove('show');
+  if(enter[id]) enter[id]();
+  paintIcons();
+}
+function go(id){ stack.push(id); history.pushState({p:stack.length}, ''); render(id, 'push'); }
+function goRoot(id){ stack.length=0; stack.push(id); history.replaceState({p:1}, ''); render(id, 'fade'); }
+function back(){ if(stack.length>1) history.back(); else goRoot('home'); }
+function current(){ return stack[stack.length-1]; }
+window.addEventListener('popstate', ()=>{ if(stack.length>1){ stack.pop(); render(current(), 'pop'); } });
+document.addEventListener('click', e=>{
+  const t = e.target.closest('[data-back],[data-tab],[data-book]'); if(!t) return;
+  if(t.hasAttribute('data-back')) back();
+  else if(t.dataset.tab) goRoot(t.dataset.tab);
+  else if(t.hasAttribute('data-book')) startBooking(t.dataset.book||null);
+});
+
+/* ============ MAPS (Leaflet + free CARTO dark tiles, no API key) ============ */
+const HAS_MAP = typeof L !== 'undefined';
+// Standard OpenStreetMap tiles (free, no key). CSS turns them dark to match iOS dark mode (see .leaflet-tile-pane).
+function tiles(){ return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19,
+  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors' }); }
+function pinSVG(color, icon){ return `<div class="lpin"><svg viewBox="0 0 40 48"><path d="M20 1C9.5 1 2 8.8 2 18.6 2 31 20 47 20 47s18-16 18-28.4C38 8.8 30.5 1 20 1z" fill="${color}" stroke="#fff" stroke-width="2.4"/></svg><i>${svgIcon(icon)}</i></div>`; }
+function pinIcon(color, icon){ return L.divIcon({ className:'', html:pinSVG(color,icon), iconSize:[40,48], iconAnchor:[20,47] }); }
+function mapFail(el){ el.innerHTML = '<div class="mapfail">The map needs an internet connection.<br>You can still search places by name.</div>'; }
+
+/* ============ 1. HOME ============ */
+enter.home = ()=>{
+  const h=new Date().getHours();
+  $('#greet').textContent = (h<12?'Good morning':h<17?'Good afternoon':'Good evening') + ', ' + (state.profile.name||'there').split(' ')[0];
+  $('#meAv').textContent = initials(state.profile.name);
+  const next = state.bookings.filter(b=>statusOf(b)==='upcoming').sort((a,b)=>at(a.date,a.time)-at(b.date,b.time))[0];
+  $('#nextBox').innerHTML = next ? `<div class="gh">Next Appointment</div><div class="group">${apptCell(next)}</div>` : '';
+  $('#homeDocs').innerHTML = DOCTORS.slice(0,3).map(docCell).join('') +
+    `<button class="cell tint" data-book>See all ${DOCTORS.length} dentists</button>`;
+};
+function docCell(d){
+  return `<button class="cell doc" data-book="${d.id}">${dav(d)}<span class="grow"><span class="ell" style="display:block;font-weight:600">${esc(d.name)}</span>
+    <small class="ell">${esc(d.spec)}</small>
+    <span class="meta"><span class="star">★ ${d.rating}</span><span>(${d.reviews})</span><span>·</span><span>${d.exp} yrs exp</span></span></span><i data-ic="chevR" class="chev"></i></button>`;
+}
+function apptCell(b){
+  const d=DOC(b.docId), st=statusOf(b), dt=fromKey(b.date);
+  const badge = st==='cancelled' ? '<span class="badge red">Cancelled</span>' : st==='completed' ? '<span class="badge gray">Completed</span>' : '';
+  return `<button class="cell ic" data-appt="${b.id}" style="padding:10px 16px"><span class="dbox${st!=='upcoming'?' dim':''}"><b>${dt.getDate()}</b><small>${dt.toLocaleDateString('en-IN',{month:'short'})}</small></span>
+    <span class="grow"><span class="ell" style="display:block;font-weight:600">${esc(d.name)}</span><small>${fmtD(b.date)} · ${fmtT(b.time)}</small>
+    <span class="meta">${badge}${b.ride?'<span class="badge blue">'+svgIcon('car').replace('<svg','<svg width="12" height="12"')+' Pick-up &amp; drop</span>':''}<span class="ell">${esc(b.patient.reason||'')}</span></span></span><i data-ic="chevR" class="chev"></i></button>`;
+}
+document.addEventListener('click', e=>{ const a=e.target.closest('[data-appt]'); if(a){ openAppt(a.dataset.appt); } });
+
+/* ============ BOOKING FLOW ============ */
+let draft = null;      // booking being made
+let slotCtx = null;    // { mode:'book'|'resched', docId, date, time, bookingId }
+function startBooking(docId){
+  draft = { docId, date:null, time:null, patient:{...state.profile, reason:'', notes:''}, ride:{ on:false, pickup:null, drop:null, same:true }, pay:'upi' };
+  if(docId){ slotCtx={ mode:'book', docId, date:null, time:null }; go('slots'); }
+  else go('doctors');
+}
+
+/* 2. Choose a dentist */
+enter.doctors = ()=>{ $('#docList').innerHTML = DOCTORS.map(d=>docCell(d).replace('data-book=','data-pick=')).join(''); };
+$('#docList').addEventListener('click', e=>{ const b=e.target.closest('[data-pick]'); if(!b) return; draft.docId=b.dataset.pick; slotCtx={ mode:'book', docId:draft.docId, date:null, time:null }; go('slots'); });
+
+/* 3. Date & time */
+function freeCount(docId,k,exceptId){ return fromKey(k).getDay()===0 ? 0 : TIMES.filter(t=>!slotTaken(docId,k,t,exceptId)).length; }
+enter.slots = ()=>{
+  if(!slotCtx) return goRoot('home');
+  const d=DOC(slotCtx.docId), re=slotCtx.mode==='resched';
+  $('#slStep').style.display = re?'none':'';
+  $('#slLarge').textContent = re ? 'Reschedule' : 'Date & Time';
+  $('#slDoc').innerHTML = `${dav(d)}<span class="grow"><b style="font-weight:600">${esc(d.name)}</b><small>${esc(d.spec)} · ${esc(d.deg)}</small>
+    <span class="meta"><span class="star">★ ${d.rating}</span><span>(${d.reviews} reviews)</span><span>·</span><span>${d.exp} yrs exp</span></span></span>`;
+  if(!slotCtx.date){ // first day that still has a free slot
+    for(let i=0;i<14;i++){ const k=dkey(addDays(new Date(),i)); if(freeCount(d.id,k,slotCtx.bookingId)>0){ slotCtx.date=k; break; } }
+  }
+  drawDates(); drawSlots();
+  requestAnimationFrame(()=>{ const on=$('#dateStrip .date.on'); if(on) on.scrollIntoView({inline:'center',block:'nearest'}); });
+};
+function drawDates(){
+  const d=DOC(slotCtx.docId); let h='';
+  for(let i=0;i<14;i++){
+    const dt=addDays(new Date(),i), k=dkey(dt), sun=dt.getDay()===0, n=sun?0:freeCount(d.id,k,slotCtx.bookingId);
+    const lbl = sun?'Closed':n===0?'Full':n+' free';
+    h += `<button class="date${n===0?' off':''}${k===slotCtx.date?' on':''}" data-d="${k}" ${n===0?'disabled':''} aria-label="${fmtD(k,1)}, ${lbl}">
+      <small>${i===0?'Today':dt.toLocaleDateString('en-IN',{weekday:'short'})}</small><b>${dt.getDate()}</b><em>${lbl}</em></button>`;
+  }
+  $('#dateStrip').innerHTML = h;
+  $('#slMonth').innerHTML = `<span>Date</span><span style="text-transform:none">${slotCtx.date?fromKey(slotCtx.date).toLocaleDateString('en-IN',{month:'long',year:'numeric'}):''}</span>`;
+}
+function drawSlots(){
+  const k=slotCtx.date, docId=slotCtx.docId;
+  if(!k){ $('#slotBox').innerHTML='<div class="empty">No free slots in the next 2 weeks.</div>'; updateSlotBtn(); return; }
+  const btn=t=>{ const off=slotTaken(docId,k,t,slotCtx.bookingId), on=!off&&t===slotCtx.time;
+    return `<button class="slot${off?' off':''}${on?' on':''}" data-t="${t}" ${off?'disabled aria-label="'+fmtT(t)+', unavailable"':''}>${fmtT(t).replace(' ',' ')}</button>`; };
+  $('#slotBox').innerHTML =
+    `<div class="gh">Morning</div><div class="slots">${TIMES.filter(t=>t<'13:00').map(btn).join('')}</div>
+     <div class="gh">Evening</div><div class="slots">${TIMES.filter(t=>t>='13:00').map(btn).join('')}</div>
+     <div class="legend"><span><i></i>Free</span><span><i class="s"></i>Selected</span><span><i class="b"></i>Booked</span></div>`;
+  updateSlotBtn();
+}
+function updateSlotBtn(){
+  const same = slotCtx.mode==='resched' && slotCtx.date===slotCtx.origDate && slotCtx.time===slotCtx.origTime; // moving to the time you already have does nothing
+  const ok = slotCtx.date && slotCtx.time && !same && !slotTaken(slotCtx.docId,slotCtx.date,slotCtx.time,slotCtx.bookingId);
+  const b=$('#slNext'); b.disabled=!ok;
+  b.textContent = !ok ? (slotCtx.mode==='resched'?'Pick a new time':'Pick a time') : (slotCtx.mode==='resched'?'Move to ':'Continue · ') + fmtD(slotCtx.date) + ', ' + fmtT(slotCtx.time);
+}
+$('#dateStrip').addEventListener('click', e=>{ const b=e.target.closest('[data-d]'); if(!b||b.disabled) return; slotCtx.date=b.dataset.d; slotCtx.time=null; drawDates(); drawSlots(); });
+$('#slotBox').addEventListener('click', e=>{ const b=e.target.closest('[data-t]'); if(!b||b.disabled) return; slotCtx.time=b.dataset.t; drawSlots(); });
+$('#slNext').onclick = async ()=>{
+  if(slotCtx.mode==='book'){ draft.date=slotCtx.date; draft.time=slotCtx.time; go('patient'); return; }
+  const bk=state.bookings.find(x=>x.id===slotCtx.bookingId); if(!bk) return back();
+  const ok = await actionSheet(`Move your appointment with ${esc(DOC(bk.docId).name)} to <b>${fmtD(slotCtx.date,1)}, ${fmtT(slotCtx.time)}</b>?`, [{label:'Reschedule', value:true}]);
+  if(!ok) return;
+  await busy(700);
+  bk.date=slotCtx.date; bk.time=slotCtx.time; bk.rescheduledAt=Date.now(); save();
+  back(); toast('Rescheduled to ' + fmtD(bk.date) + ', ' + fmtT(bk.time) + '.');
+};
+
+/* 4. Patient details */
+enter.patient = ()=>{
+  if(!draft) return goRoot('home');
+  const p=draft.patient;
+  $('#ptName').value=p.name||''; $('#ptPhone').value=p.phone||''; $('#ptAge').value=p.age||''; $('#ptNotes').value=p.notes||'';
+  $('#ptReason').textContent = p.reason || 'Choose'; $('#ptReason').style.color = p.reason ? 'var(--label)' : '';
+  document.querySelectorAll('#ptGender button').forEach(b=>b.classList.toggle('on', b.dataset.v===p.gender));
+};
+$('#ptGender').onclick = e=>{ const b=e.target.closest('button'); if(!b) return; draft.patient.gender=b.dataset.v; document.querySelectorAll('#ptGender button').forEach(x=>x.classList.toggle('on', x===b)); };
+$('#ptReasonBtn').onclick = async ()=>{ readPatient(); const r = await actionSheet('Reason for visit', REASONS.map(x=>({label:x, value:x}))); if(r){ draft.patient.reason=r; enter.patient(); } };
+function readPatient(){ Object.assign(draft.patient, { name:$('#ptName').value.trim(), phone:$('#ptPhone').value.replace(/\D/g,''), age:$('#ptAge').value.trim(), notes:$('#ptNotes').value.trim() }); }
+$('#ptNext').onclick = ()=>{
+  readPatient(); const p=draft.patient;
+  if(p.name.length<2) return toast('Please enter the patient’s name.');
+  if(!/^[6-9]\d{9}$/.test(p.phone)) return toast('Enter a valid 10-digit Indian mobile number.'); // ASSUMPTION: Indian mobile format
+  if(!p.age || +p.age<1 || +p.age>110) return toast('Please enter the patient’s age.');
+  if(!p.gender) return toast('Please choose a gender.');
+  if(!p.reason) return toast('Please choose a reason for the visit.');
+  // ASSUMPTION: details are remembered to pre-fill the next booking
+  state.profile = { name:p.name, phone:p.phone, age:p.age, gender:p.gender }; save();
+  go('ride');
+};
+
+/* 5. Pick-up & drop */
+function dropOf(r){ return r.same ? r.pickup : r.drop; }
+function rideReady(r){ return r.on && r.pickup && dropOf(r); }
+enter.ride = ()=>{
+  if(!draft) return goRoot('home');
+  const r=draft.ride;
+  const locRow=(kind,loc,color)=>`<button class="cell ic" data-loc="${kind}"><span class="sq" style="background:${color};border-radius:50%"><i data-ic="pin"></i></span>
+    <span class="grow"><span style="display:block;color:var(--l2);font-size:13px">${kind==='pickup'?'Pick-up from':'Drop at'}</span>
+    <span class="ell" style="display:block;${loc?'':'color:var(--tint)'}">${loc?esc(loc.label):'Choose location'}</span>${loc?`<small>${km(CLINIC,loc)} km from clinic</small>`:''}</span><i data-ic="chevR" class="chev"></i></button>`;
+  let h = `<div class="steps">Step 4 of 4 · Optional</div><div class="large">Pick-up &amp; Drop</div>
+    <p class="lead">We can pick you up before your appointment and drop you after it.</p>
+    <div class="group"><label class="cell ic"><span class="sq" style="background:var(--blue)"><i data-ic="car"></i></span><span class="grow">Add pick-up &amp; drop</span><input type="checkbox" class="sw" id="rideOn" ${r.on?'checked':''}></label></div>`;
+  if(r.on){
+    const pkTime = new Date(at(draft.date,draft.time).getTime() - PICKUP_BEFORE_MIN*60000);
+    h += `<div class="gh">Locations</div><div class="group">${locRow('pickup',r.pickup,'var(--green)')}
+      <label class="cell"><span class="grow">Drop at the same place</span><input type="checkbox" class="sw" id="rideSame" ${r.same?'checked':''}></label>
+      ${r.same?'':locRow('drop',r.drop,'var(--red)')}</div>
+      <p class="gf">Driver arrives around <b style="color:var(--label)">${hmDate(pkTime)}</b> and drops you back after your visit.</p>`;
+    if(rideReady(r)){
+      const q=rideQuote(r.pickup, dropOf(r));
+      h += `<div class="gh">Charges</div><div class="group">
+        <div class="cell"><span class="grow">Base fee</span><span class="v">${inr(RIDE_BASE)}</span></div>
+        <div class="cell"><span class="grow">Pick-up → clinic<small>${q.pk} km × ${inr(RIDE_PER_KM)}/km</small></span><span class="v">${inr(q.pkCost)}</span></div>
+        <div class="cell"><span class="grow">Clinic → drop<small>${q.dk} km × ${inr(RIDE_PER_KM)}/km</small></span><span class="v">${inr(q.dkCost)}</span></div>
+        <div class="cell total"><span class="grow">Pick-up &amp; drop</span><span>${inr(q.total)}</span></div></div>`;
+    }
+  }
+  h += `<div class="gh">How It’s Priced</div><div class="group"><div class="cell ic"><span class="sq" style="background:var(--orange)"><i data-ic="cash"></i></span>
+    <span class="grow" style="font-size:15px;line-height:1.35">${inr(RIDE_BASE)} base fee + ${inr(RIDE_PER_KM)} per km for each leg, measured from the clinic.<small>Available within ${MAX_KM} km of the clinic.</small></span></div></div>`;
+  $('#rideBody').innerHTML = h;
+  // footer: running total
+  const q = rideReady(r) ? rideQuote(r.pickup, dropOf(r)) : null;
+  $('#rideSum').innerHTML = `<span>Consultation ${inr(FEE)}${q?' + ride '+inr(q.total):''}</span><b>${inr(FEE+(q?q.total:0))}</b>`;
+  $('#rideNext').textContent = r.on ? 'Review Booking' : 'Skip & Review Booking';
+  paintIcons($('#rideBody'));
+};
+$('#rideBody').addEventListener('change', e=>{
+  if(e.target.id==='rideOn'){ draft.ride.on=e.target.checked; enter.ride(); }
+  if(e.target.id==='rideSame'){ draft.ride.same=e.target.checked; enter.ride(); }
+});
+$('#rideBody').addEventListener('click', e=>{ const b=e.target.closest('[data-loc]'); if(b) openPicker(b.dataset.loc); });
+$('#rideNext').onclick = ()=>{
+  const r=draft.ride;
+  if(r.on && !r.pickup) return toast('Choose a pick-up location, or turn pick-up & drop off.');
+  if(r.on && !dropOf(r)) return toast('Choose a drop location.');
+  go('summary');
+};
+
+/* 6. Location picker: drag the map under the centre pin, search a place, or use GPS */
+let pkMap=null, pkLine=null;
+const pick = { target:'pickup', loc:null, fixed:false, typed:false }; // typed = keep the address the user typed while they drag the pin
+function openPicker(target){ pick.target=target; const cur=draft.ride[target]; pick.loc=cur?{...cur}:null; pick.fixed=!!cur; pick.typed=false; $('#pkSearch').value=''; go('picker'); }
+function initPickMap(){
+  if(pkMap || !HAS_MAP) return;
+  try{
+    pkMap = L.map('pkMap', { zoomControl:false, attributionControl:true }).setView([CLINIC.lat,CLINIC.lng], 14);
+    tiles().addTo(pkMap);
+    L.marker([CLINIC.lat,CLINIC.lng], { icon:pinIcon('#0a7ea4','tooth'), interactive:false }).addTo(pkMap);
+    pkLine = L.polyline([], { color:'#0a84ff', weight:3, dashArray:'6 8', opacity:.9 }).addTo(pkMap);
+    pkMap.on('dragstart zoomstart', e=>{ if(e.type==='dragstart' && !pick.typed){ pick.fixed=false; } $('#pkPin').classList.add('lift'); });
+    pkMap.on('move', ()=>{ const c=pkMap.getCenter(); pkLine.setLatLngs([[CLINIC.lat,CLINIC.lng],[c.lat,c.lng]]); });
+    pkMap.on('moveend', ()=>{ $('#pkPin').classList.remove('lift'); onPickMove(); });
+    pkMap.on('click', e=>{ if(!pick.typed) pick.fixed=false; pkMap.panTo(e.latlng); }); // tap the map to move the pin there
+  }catch(err){ pkMap=null; mapFail($('#pkMap')); }
+}
+function onPickMove(){
+  const c=pkMap.getCenter();
+  if(pick.fixed && pick.loc){ pick.loc.lat=c.lat; pick.loc.lng=c.lng; }
+  else { // ASSUMPTION: no reverse-geocoding service, so a dropped pin is named after the nearest known place
+    const n=nearest(c); pick.loc={ label: n.d<0.35 ? n.place.name+', Alappuzha' : 'Pinned spot near '+n.place.name, lat:c.lat, lng:c.lng };
+  }
+  showPick();
+}
+function showPick(){
+  const l=pick.loc;
+  $('#pkLabel').textContent = l ? l.label : 'Search for a place or use your location';
+  if(l){ const d=km(CLINIC,l); $('#pkDist').textContent = d>MAX_KM ? `${d} km from clinic · outside the ${MAX_KM} km service area` : `${d} km by road from the clinic (approx.)`; $('#pkDist').classList.toggle('warn', d>MAX_KM); }
+  else $('#pkDist').textContent='';
+  $('#pkOk').disabled = !l || km(CLINIC,l)>MAX_KM;
+}
+enter.picker = ()=>{
+  const isPk = pick.target==='pickup';
+  $('#pkKind').textContent = isPk ? 'Pick-up location' : 'Drop location';
+  $('#pkIcon').style.background = isPk ? 'var(--green)' : 'var(--red)';
+  $('#pkPin').innerHTML = HAS_MAP ? pinSVG(isPk?'#30d158':'#ff453a','person') : '';
+  $('#pkOk').textContent = 'Confirm ' + (isPk ? 'Pick-up' : 'Drop') + ' Location';
+  const start = pick.loc || DEMO_HERE; // remember before the map's first move event changes pick.loc
+  initPickMap(); showPick();
+  if(pkMap) setTimeout(()=>{ pkMap.invalidateSize(); pkMap.setView([start.lat,start.lng], 15, {animate:false}); }, 30);
+};
+function moveTo(loc, label, typed){ pick.fixed=true; pick.typed=!!typed; pick.loc={label, lat:loc.lat, lng:loc.lng}; if(pkMap) pkMap.setView([loc.lat,loc.lng], 16); showPick(); }
+// search box: local place list + "use what I typed"
+function drawSugg(){
+  const q=$('#pkSearch').value.trim(), ql=q.toLowerCase();
+  const hits=PLACES.filter(p=>!ql || p.name.toLowerCase().includes(ql)).slice(0,6);
+  let h = hits.map(p=>`<button class="cell ic" data-place="${PLACES.indexOf(p)}"><span class="sq" style="background:var(--g3);border-radius:50%"><i data-ic="pin"></i></span><span class="grow">${esc(p.name)}<small>Alappuzha · ${km(CLINIC,p)} km</small></span></button>`).join('');
+  if(q.length>2) h += `<button class="cell ic" data-typed="1"><span class="sq" style="background:var(--blue);border-radius:50%"><i data-ic="note"></i></span><span class="grow">Use “${esc(q)}”<small>Then drag the map so the pin sits on it</small></span></button>`;
+  $('#pkSugg').innerHTML = h || '<div class="cell" style="color:var(--l2)">No matches</div>';
+  $('#pkSugg').classList.add('show'); paintIcons($('#pkSugg'));
+}
+$('#pkSearch').addEventListener('focus', drawSugg);
+$('#pkSearch').addEventListener('input', drawSugg);
+$('#pkSearch').addEventListener('keydown', e=>{ if(e.key==='Enter'){ const f=$('#pkSugg [data-place],#pkSugg [data-typed]'); if(f) f.click(); } if(e.key==='Escape') $('#pkSugg').classList.remove('show'); });
+$('#pkSugg').addEventListener('click', e=>{
+  const p=e.target.closest('[data-place]'), t=e.target.closest('[data-typed]');
+  if(p){ const pl=PLACES[+p.dataset.place]; moveTo(pl, pl.name+', Alappuzha'); $('#pkSearch').value=pl.name; }
+  else if(t){ const c=pkMap?pkMap.getCenter():(pick.loc||DEMO_HERE); moveTo(c, $('#pkSearch').value.trim(), true); toast('Drag the map so the pin sits on your address.'); }
+  else return;
+  $('#pkSugg').classList.remove('show'); $('#pkSearch').blur();
+});
+$('#pkMapWrap').addEventListener('pointerdown', ()=>$('#pkSugg').classList.remove('show'));
+// "Use my location": real GPS if allowed and near Alappuzha; otherwise a demo spot so the prototype still works anywhere
+$('#pkGeo').onclick = ()=>{
+  const fallback = why=>{ moveTo(DEMO_HERE, 'Current location (demo), Kommady'); toast(why + ' Using a demo location in Alappuzha.'); };
+  if(!navigator.geolocation) return fallback('Location isn’t available.');
+  $('#busy').classList.add('show');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    $('#busy').classList.remove('show');
+    const here={lat:pos.coords.latitude, lng:pos.coords.longitude};
+    if(km(CLINIC,here)>MAX_KM) return fallback('You seem to be far from Alappuzha.');
+    const n=nearest(here); moveTo(here, 'Current location, near '+n.place.name);
+  }, ()=>{ $('#busy').classList.remove('show'); fallback('Location permission was not given.'); }, { timeout:8000, maximumAge:60000 });
+};
+$('#pkOk').onclick = ()=>{
+  if(!pick.loc) return;
+  if(km(CLINIC,pick.loc)>MAX_KM) return toast(`Pick-up & drop is available within ${MAX_KM} km of the clinic.`);
+  draft.ride[pick.target] = { label:pick.loc.label, lat:+pick.loc.lat.toFixed(5), lng:+pick.loc.lng.toFixed(5) };
+  back();
+};
+
+/* 7. Summary + MOCK payment (never collects real card/UPI details) */
+function totals(b){ const q = b.ride && b.ride.on && rideReady(b.ride) ? rideQuote(b.ride.pickup, dropOf(b.ride)) : null; return { q, total: FEE + (q?q.total:0) }; }
+enter.summary = ()=>{
+  if(!draft) return goRoot('home');
+  const d=DOC(draft.docId), p=draft.patient, {q,total}=totals(draft), r=draft.ride;
+  let h = `<div class="large">Review Booking</div>
+    <div class="gh">Appointment</div><div class="group">
+      <div class="cell doc">${dav(d)}<span class="grow"><b style="font-weight:600">${esc(d.name)}</b><small>${esc(d.spec)}</small></span></div>
+      <div class="cell ic"><span class="sq" style="background:var(--red)"><i data-ic="calendar"></i></span><span class="grow">${fmtD(draft.date,1)}<small>${fmtT(draft.time)} · about 30 minutes</small></span></div>
+      <div class="cell ic"><span class="sq" style="background:var(--teal)"><i data-ic="pin"></i></span><span class="grow">${CLINIC.name}<small>Mullakkal Rd, Alappuzha</small></span></div>
+    </div>
+    <div class="gh">Patient</div><div class="group">
+      <div class="cell ic"><span class="sq" style="background:var(--gray)"><i data-ic="person"></i></span><span class="grow">${esc(p.name)}<small>${esc(p.gender)}, ${esc(p.age)} yrs · +91 ${esc(p.phone)}</small></span></div>
+      <div class="cell ic"><span class="sq" style="background:var(--purple)"><i data-ic="tooth"></i></span><span class="grow">${esc(p.reason)}${p.notes?`<small>${esc(p.notes)}</small>`:''}</span></div>
+    </div>`;
+  if(q) h += `<div class="gh">Pick-up &amp; Drop</div><div class="group">
+      <div class="cell ic"><span class="sq" style="background:var(--green);border-radius:50%"><i data-ic="pin"></i></span><span class="grow"><span class="ell" style="display:block">${esc(r.pickup.label)}</span><small>Pick-up · ${q.pk} km</small></span></div>
+      <div class="cell ic"><span class="sq" style="background:var(--red);border-radius:50%"><i data-ic="pin"></i></span><span class="grow"><span class="ell" style="display:block">${esc(dropOf(r).label)}</span><small>Drop · ${q.dk} km</small></span></div></div>`;
+  h += `<div class="gh">Charges</div><div class="group">
+      <div class="cell"><span class="grow">Consultation fee</span><span class="v">${inr(FEE)}</span></div>
+      ${q?`<div class="cell"><span class="grow">Pick-up &amp; drop<small>${inr(RIDE_BASE)} base + ${(q.pk+q.dk).toFixed(1)} km × ${inr(RIDE_PER_KM)}</small></span><span class="v">${inr(q.total)}</span></div>`:''}
+      <div class="cell total"><span class="grow">Total</span><span>${inr(total)}</span></div></div>
+    <div class="gh">Pay With</div>
+    <div class="group"><button class="cell ic" id="payBtn"><span class="sq" style="background:var(--orange)"><i data-ic="${draft.pay==='clinic'?'cash':'card'}"></i></span><span class="grow">${PAY[draft.pay].label}<small>${PAY[draft.pay].sub}</small></span><span class="v" style="color:var(--tint)">Change</span></button></div>
+    <p class="gf">Mock payment for this prototype. No money moves, and no real card or UPI details are asked for or sent anywhere.</p>`;
+  $('#sumBody').innerHTML = h;
+  $('#sumPay').textContent = draft.pay==='clinic' ? `Confirm Booking · Pay ${inr(total)} at Clinic` : `Pay ${inr(total)} & Confirm`;
+  paintIcons($('#sumBody'));
+};
+$('#sumBody').addEventListener('click', async e=>{
+  if(!e.target.closest('#payBtn')) return;
+  // ASSUMPTION: three mock payment choices; the UPI ID and card are fixed demo values
+  const v = await actionSheet('Choose a payment method (demo only)', Object.entries(PAY).map(([k,o])=>({label:o.label+(k===draft.pay?' ✓':''), value:k})));
+  if(v){ draft.pay=v; enter.summary(); }
+});
+$('#sumPay').onclick = async ()=>{
+  if(slotTaken(draft.docId,draft.date,draft.time)){ toast('Sorry, that slot was just taken. Please pick another time.'); return; }
+  await busy(draft.pay==='clinic'?600:1300);
+  const {q,total} = totals(draft);
+  const b = { id:'PDC-'+String(1000+Math.floor(Math.random()*9000)), docId:draft.docId, date:draft.date, time:draft.time, status:'booked',
+    patient:{...draft.patient}, ride: q ? { pickup:draft.ride.pickup, drop:dropOf(draft.ride), pk:q.pk, dk:q.dk, cost:q.total } : null,
+    fee:FEE, total, pay:draft.pay, createdAt:Date.now() };
+  state.bookings.push(b); save();
+  lastBooked=b.id; draft=null;
+  stack.length=0; stack.push('done'); history.replaceState({p:1},''); render('done','up');
+};
+let lastBooked=null;
+enter.done = ()=>{
+  const b=state.bookings.find(x=>x.id===lastBooked); if(!b) return goRoot('home');
+  const d=DOC(b.docId);
+  $('#doneLead').textContent = `See you on ${fmtD(b.date,1)} at ${fmtT(b.time)}. ` + (b.pay==='clinic' ? `Pay ${inr(b.total)} at reception.` : `Mock payment of ${inr(b.total)} received.`);
+  $('#doneTicket').innerHTML = `<div class="ticket"><div class="th">${dav(d)}<div class="grow"><b style="font-size:17px">${esc(d.name)}</b><small style="display:block;color:var(--l2);font-size:13px;margin-top:2px">${fmtD(b.date)} · ${fmtT(b.time)}${b.ride?' · Pick-up '+hmDate(new Date(at(b.date,b.time)-PICKUP_BEFORE_MIN*60000)):''}</small></div></div>
+    <div class="tid"><span>Booking ID</span><b>${b.id}</b></div></div>`;
+};
+
+/* ============ 9. MY APPOINTMENTS ============ */
+let apTab='up';
+enter.appts = ()=>{
+  document.querySelectorAll('#apSeg button').forEach(b=>b.classList.toggle('on', b.dataset.v===apTab));
+  const list = state.bookings.filter(b=> apTab==='up' ? statusOf(b)==='upcoming' : statusOf(b)!=='upcoming')
+    .sort((a,b)=> apTab==='up' ? at(a.date,a.time)-at(b.date,b.time) : at(b.date,b.time)-at(a.date,a.time));
+  $('#apList').innerHTML = list.length ? `<div class="group">${list.map(apptCell).join('')}</div>` :
+    `<div class="empty">${apTab==='up'?'No upcoming appointments.':'Nothing here yet.'}${apTab==='up'?'<div style="height:14px"></div><button class="btn" data-book><i data-ic="calendar"></i>Book an Appointment</button>':''}</div>`;
+};
+$('#apSeg').onclick = e=>{ const b=e.target.closest('button'); if(!b) return; apTab=b.dataset.v; enter.appts(); paintIcons(); };
+
+/* ============ 10. APPOINTMENT DETAILS (view / reschedule / cancel) ============ */
+let apptId=null;
+function openAppt(id){ apptId=id; go('appt'); }
+enter.appt = ()=>{
+  const b=state.bookings.find(x=>x.id===apptId); if(!b) return goRoot('appts');
+  const d=DOC(b.docId), st=statusOf(b), p=b.patient;
+  const badge = {upcoming:'<span class="badge green">Confirmed</span>', completed:'<span class="badge gray">Completed</span>', cancelled:'<span class="badge red">Cancelled</span>'}[st];
+  let h = `<div style="display:flex;gap:14px;align-items:center;margin:6px 20px 22px">${dav(d,'lg')}<div style="min-width:0"><div style="font-size:22px;font-weight:700;letter-spacing:-.5px">${esc(d.name)}</div>
+      <div style="color:var(--l2);font-size:15px;margin:2px 0 6px">${esc(d.spec)}</div>${badge}</div></div>
+    <div class="group">
+      <div class="cell ic"><span class="sq" style="background:var(--red)"><i data-ic="calendar"></i></span><span class="grow">${fmtD(b.date,1)}<small>${fmtT(b.time)}${b.rescheduledAt?' · rescheduled':''}</small></span></div>
+      <div class="cell ic"><span class="sq" style="background:var(--gray)"><i data-ic="person"></i></span><span class="grow">${esc(p.name)}<small>${esc(p.gender)}, ${esc(p.age)} yrs · +91 ${esc(p.phone)}</small></span></div>
+      <div class="cell ic"><span class="sq" style="background:var(--purple)"><i data-ic="tooth"></i></span><span class="grow">${esc(p.reason)}${p.notes?`<small>${esc(p.notes)}</small>`:''}</span></div>
+      <button class="cell ic" data-tab="clinic"><span class="sq" style="background:var(--teal)"><i data-ic="pin"></i></span><span class="grow">${CLINIC.name}<small>Mullakkal Rd, Alappuzha</small></span><i data-ic="chevR" class="chev"></i></button>
+    </div>`;
+  if(b.ride) h += `<div class="gh">Pick-up &amp; Drop</div><div class="group">
+      <div class="cell ic"><span class="sq" style="background:var(--green);border-radius:50%"><i data-ic="pin"></i></span><span class="grow"><span class="ell" style="display:block">${esc(b.ride.pickup.label)}</span><small>Pick-up around ${hmDate(new Date(at(b.date,b.time)-PICKUP_BEFORE_MIN*60000))} · ${b.ride.pk} km</small></span></div>
+      <div class="cell ic"><span class="sq" style="background:var(--red);border-radius:50%"><i data-ic="pin"></i></span><span class="grow"><span class="ell" style="display:block">${esc(b.ride.drop.label)}</span><small>Drop after the visit · ${b.ride.dk} km</small></span></div></div>`;
+  h += `<div class="gh">Payment</div><div class="group">
+      <div class="cell"><span class="grow">Consultation fee</span><span class="v">${inr(b.fee)}</span></div>
+      ${b.ride?`<div class="cell"><span class="grow">Pick-up &amp; drop</span><span class="v">${inr(b.ride.cost)}</span></div>`:''}
+      <div class="cell total"><span class="grow">Total</span><span>${inr(b.total)}</span></div>
+      <div class="cell"><span class="grow">${PAY[b.pay].label}</span><span class="v">${st==='cancelled' ? (b.pay==='clinic'?'Not charged':'Refunded (mock)') : b.pay==='clinic' ? (st==='completed'?'Paid at clinic':'Pay at clinic') : 'Paid (mock)'}</span></div>
+    </div>
+    <p class="center" style="color:var(--l3);font-size:13px">Booking ID ${b.id}</p>`;
+  $('#adBody').innerHTML = h;
+  $('#adFoot').style.display = st==='upcoming' ? '' : 'none';
+  paintIcons($('#adBody'));
+};
+$('#adResched').onclick = ()=>{ const b=state.bookings.find(x=>x.id===apptId); if(!b) return; slotCtx={ mode:'resched', docId:b.docId, date:b.date, time:b.time, origDate:b.date, origTime:b.time, bookingId:b.id }; go('slots'); };
+$('#adCancel').onclick = async ()=>{
+  const b=state.bookings.find(x=>x.id===apptId); if(!b) return;
+  // ASSUMPTION: free cancellation any time; online (mock) payments show as refunded
+  const ok = await actionSheet(`Cancel your appointment with ${esc(DOC(b.docId).name)} on ${fmtD(b.date)}, ${fmtT(b.time)}?` + (b.pay!=='clinic'?`<br>${inr(b.total)} will be refunded (mock).`:''),
+    [{ label:'Cancel Appointment', value:true, danger:true }]);
+  if(!ok) return;
+  await busy(600);
+  b.status='cancelled'; b.cancelledAt=Date.now(); save();
+  enter.appt(); paintIcons(); toast('Appointment cancelled.');
+};
+
+/* ============ 11. CLINIC LOCATION ============ */
+let clMap=null;
+enter.clinic = ()=>{
+  if(!HAS_MAP){ mapFail($('#clMap')); return; }
+  if(!clMap){
+    try{
+      clMap = L.map('clMap', { zoomControl:false }).setView([CLINIC.lat, CLINIC.lng+0.004], 15);
+      tiles().addTo(clMap);
+      L.marker([CLINIC.lat,CLINIC.lng], { icon:pinIcon('#0a7ea4','tooth'), title:CLINIC.name }).addTo(clMap)
+        .bindPopup(`<b>${CLINIC.name}</b><br>Mullakkal Rd, Alappuzha`);
+    }catch(err){ clMap=null; mapFail($('#clMap')); return; }
+  }
+  setTimeout(()=>clMap.invalidateSize(), 30);
+};
+$('#clRecenter').onclick = ()=>{ if(clMap) clMap.flyTo([CLINIC.lat, CLINIC.lng], 16, {duration:.6}); };
+function openUrl(u){ window.open(u, '_blank', 'noopener'); }
+$('#clDir').onclick = ()=> openUrl(`https://www.google.com/maps/dir/?api=1&destination=${CLINIC.lat},${CLINIC.lng}`);
+$('#clOpen').onclick = async ()=>{
+  const v = await actionSheet('Open the clinic location in', [{label:'Google Maps', value:'g'}, {label:'Apple Maps', value:'a'}]);
+  if(v==='g') openUrl(`https://www.google.com/maps/search/?api=1&query=${CLINIC.lat},${CLINIC.lng}`);
+  if(v==='a') openUrl(`https://maps.apple.com/?ll=${CLINIC.lat},${CLINIC.lng}&q=${encodeURIComponent(CLINIC.name)}`);
+};
+
+/* ============ START ============ */
+paintIcons();
+goRoot('home');
+</script>
+</body>
+</html>
