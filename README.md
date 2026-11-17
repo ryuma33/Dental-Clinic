@@ -33,7 +33,7 @@ Clinic tab ─► map + address + hours ─► Directions / Open in Maps (Google
 | # | Screen | What you can do |
 |---|--------|-----------------|
 | 1 | Home | Greeting, "Book Now", your next appointment, the dentists, clinic location, call reception |
-| 2 | Choose a Dentist | 5 dentists with initials, speciality, experience, ★ rating |
+| 2 | Choose a Dentist | 4 dentists with initials, speciality, experience, ★ rating |
 | 3 | Date & Time | Next 14 days (Sunday closed). Booked and past slots are crossed out and can't be tapped |
 | 4 | Patient Details | Name, mobile, age, gender, reason, notes. Pre-filled with sample values; you can edit them |
 | 5 | Pick-up & Drop | Optional switch, pick-up and drop locations, "drop at the same place", live price breakdown |
@@ -64,7 +64,7 @@ To start fresh, open the browser console (F12) and run `localStorage.removeItem(
 ## Assumptions (marked `// ASSUMPTION` in the code)
 
 1. Clinic name **Pearl Dental Care**, address (Mullakkal Rd, Alappuzha 688011), phone and map position are made up.
-2. The 5 dentists, their specialities, ratings and review counts are sample data. All charge ₹500.
+2. Dentist names come from you. Their specialities, experience, ratings and review counts are sample data. All charge ₹500.
 3. Opening hours: Mon–Sat, 9:30 AM–1 PM and 3 PM–7:30 PM, 30-minute slots, closed Sunday.
 4. Other patients' bookings are simulated (about 1 in 3 slots is taken). Your own bookings also block slots.
 5. Road distance ≈ straight-line distance × 1.3 (real routing would need an API key).
