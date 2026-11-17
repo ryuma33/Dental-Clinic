@@ -79,6 +79,10 @@ To start fresh, open the browser console (F12) and run `localStorage.removeItem(
 14. Payment choices: demo UPI, demo card, or pay at clinic.
 15. One completed past visit is pre-loaded so the "Past" list isn't empty.
 
+## Licence
+
+**All rights reserved.** This is a private prototype. You may view it, but you may not copy, modify, reuse or distribute it without written permission. See [LICENSE](LICENSE).
+
 ## Built with
 
 - Plain HTML/CSS/JavaScript, iOS dark-mode colours, the same structure as `park4u`
