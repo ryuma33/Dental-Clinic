@@ -48,7 +48,8 @@ i[data-ic] svg{width:1em;height:1em}
 }
 
 /* ---------- screens + iOS transitions ---------- */
-.screen{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg);overflow:hidden}
+/* isolation keeps each screen's layers (map, cards) inside it, so the tab bar and pop-ups always stay on top */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg);overflow:hidden;isolation:isolate}
 .screen.on{display:flex}
 .screen.push{animation:pushIn .45s cubic-bezier(.32,.72,0,1)}
 .screen.pop{animation:popIn .4s cubic-bezier(.32,.72,0,1)}
